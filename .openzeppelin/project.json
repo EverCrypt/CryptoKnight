@@ -1,0 +1,37 @@
+{
+  "manifestVersion": "2.2",
+  "contracts": {
+    "Universe": "Universe",
+    "ChargedParticles": "ChargedParticles",
+    "Photon": "Photon",
+    "GenericWalletManager": "GenericWalletManager",
+    "GenericBasketManager": "GenericBasketManager",
+    "AaveWalltManager": "AaveWalletManager",
+    "AaveBridgeV1": "AaveBridgeV1",
+    "AaveBridgeV2": "AaveBridgeV2",
+    "Ion": "Ion",
+    "IonTimelock": "IonTimelock",
+    "Proton": "Proton"
+  },
+  "dependencies": {
+  },
+  "name": "charged-particles",
+  "version": "0.1.0",
+  "telemetryOptIn": false,
+  "compiler": {
+    "manager": "openzeppelin",
+    "solcVersion": "0.6.12",
+    "compilerSettings": {
+      "optimizer": {
+        "enabled": true,
+        "runs": "200"
+      },
+      "evmVersion": "istanbul"
+    },
+    "artifactsDir": "build",
+    "contractsDir": "contracts",
+    "typechain": {
+      "enabled": false
+    }
+  }
+}
