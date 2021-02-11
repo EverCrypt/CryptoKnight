@@ -39,9 +39,6 @@ contract GenericBasketManager is Ownable, BlackholePrevention, IBasketManager {
   using Counters for Counters.Counter;
   using TokenInfo for address;
 
-  event ControllerSet(address indexed controller);
-  event PausedStateSet(bool isPaused);
-
   // The Controller Contract Address
   address internal _controller;
 
@@ -140,7 +137,7 @@ contract GenericBasketManager is Ownable, BlackholePrevention, IBasketManager {
   {
     uint256 uuid = contractAddress.getTokenUUID(tokenId);
     address basket = _baskets[uuid];
-    require(basket != address(0x0), "GenericBasketManager:E-403");
+    require(basket != address(0x0), "GBM:E-403");
 
     removed = GenericSmartBasket(basket).removeFromBasket(receiver, basketTokenAddress, basketTokenId);
 
@@ -279,13 +276,13 @@ contract GenericBasketManager is Ownable, BlackholePrevention, IBasketManager {
 
   /// @dev Throws if called by any account other than the Controller contract
   modifier onlyController() {
-    require(_controller == msg.sender, "GenericBasketManager:E-108");
+    require(_controller == msg.sender, "GBM:E-108");
     _;
   }
 
   // Throws if called by any account other than the Charged Particles Escrow Controller.
   modifier whenNotPaused() {
-    require(_paused != true, "GenericBasketManager:E-101");
+    require(_paused != true, "GBM:E-101");
     _;
   }
 

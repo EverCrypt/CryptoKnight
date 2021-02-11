@@ -39,9 +39,6 @@ import "./BlackholePrevention.sol";
 abstract contract WalletManagerBase is Ownable, BlackholePrevention, IWalletManager {
   using TokenInfo for address;
 
-  event ControllerSet(address indexed controller);
-  event PausedStateSet(bool isPaused);
-
   // The Controller Contract Address
   address internal _controller;
 
@@ -150,13 +147,13 @@ abstract contract WalletManagerBase is Ownable, BlackholePrevention, IWalletMana
 
   /// @dev Throws if called by any account other than the Controller contract
   modifier onlyController() {
-    require(_controller == msg.sender, "WalletManagerBase:E-108");
+    require(_controller == msg.sender, "WMB:E-108");
     _;
   }
 
   // Throws if called by any account other than the Charged Particles Escrow Controller.
   modifier whenNotPaused() {
-    require(_paused != true, "WalletManagerBase:E-101");
+    require(_paused != true, "WMB:E-101");
     _;
   }
 

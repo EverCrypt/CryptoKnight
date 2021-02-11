@@ -24,31 +24,18 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/GSN/ContextUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../lib/BlackholePrevention.sol";
 import "../lib/RelayRecipient.sol";
 
 // Charged Particles Membership
-contract Photon is Initializable, ContextUpgradeable, RelayRecipient, BlackholePrevention {
-  using AddressUpgradeable for address;
+contract Photon is Ownable, RelayRecipient, BlackholePrevention {
 
   event PhotonUpdated(address indexed owner, string photonURI);
   event PhotonTransferred(address indexed oldOwner, address indexed newPhoton, string photonURI);
 
   mapping (address => string) private _photonURIs;
-
-
-  /***********************************|
-  |          Initialization           |
-  |__________________________________*/
-
-  function initialize(address _trustedForwarder) public initializer {
-    __Context_init_unchained();
-    trustedForwarder = _trustedForwarder;
-  }
 
 
   /***********************************|
@@ -82,7 +69,7 @@ contract Photon is Initializable, ContextUpgradeable, RelayRecipient, BlackholeP
   /// @dev See {BaseRelayRecipient-_msgSender}.
   function _msgSender()
     internal view
-    override(BaseRelayRecipient, ContextUpgradeable)
+    override(BaseRelayRecipient, Context)
     returns (address payable)
   {
     return BaseRelayRecipient._msgSender();
@@ -91,9 +78,30 @@ contract Photon is Initializable, ContextUpgradeable, RelayRecipient, BlackholeP
   /// @dev See {BaseRelayRecipient-_msgData}.
   function _msgData()
     internal view
-    override(BaseRelayRecipient, ContextUpgradeable)
+    override(BaseRelayRecipient, Context)
     returns (bytes memory)
   {
     return BaseRelayRecipient._msgData();
+  }
+
+  /***********************************|
+  |          Only Admin/DAO           |
+  |      (blackhole prevention)       |
+  |__________________________________*/
+
+  function setTrustedForwarder(address _trustedForwarder) external onlyOwner {
+    trustedForwarder = _trustedForwarder;
+  }
+
+  function withdrawEther(address payable receiver, uint256 amount) external onlyOwner {
+    _withdrawEther(receiver, amount);
+  }
+
+  function withdrawErc20(address payable receiver, address tokenAddress, uint256 amount) external onlyOwner {
+    _withdrawERC20(receiver, tokenAddress, amount);
+  }
+
+  function withdrawERC721(address payable receiver, address tokenAddress, uint256 tokenId) external onlyOwner {
+    _withdrawERC721(receiver, tokenAddress, tokenId);
   }
 }

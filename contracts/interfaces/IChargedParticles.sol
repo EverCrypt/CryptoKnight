@@ -118,6 +118,7 @@ interface IChargedParticles {
   |__________________________________*/
 
   event UniverseSet(address indexed universeAddress);
-  event ChargedStateSet(address indexed stateController);
-  event ChargedSettingsSet(address indexed settingsController);
+  event ChargedStateSet(address indexed chargedState);
+  event ChargedSettingsSet(address indexed chargedSettings);
+  event LeptonTokenSet(address indexed leptonToken);
 }

@@ -23,10 +23,8 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "./interfaces/IChargedState.sol";
 
@@ -37,17 +35,14 @@ import "./lib/BlackholePrevention.sol";
 
 /**
  * @notice Charged Particles Settings Contract
- * @dev Upgradeable Contract
  */
 contract ChargedState is
   IChargedState,
-  Initializable,
-  OwnableUpgradeable,
-  ReentrancyGuardUpgradeable,
+  Ownable,
   RelayRecipient,
   BlackholePrevention
 {
-  using SafeMathUpgradeable for uint256;
+  using SafeMath for uint256;
   using TokenInfo for address;
   using Bitwise for uint32;
 
@@ -77,17 +72,6 @@ contract ChargedState is
 
   // State of individual NFTs (by Token UUID)
   mapping (uint256 => NftState) internal _nftState;
-
-
-  /***********************************|
-  |          Initialization           |
-  |__________________________________*/
-
-  function initialize(address _trustedForwarder) public initializer {
-    __Ownable_init();
-    __ReentrancyGuard_init();
-    trustedForwarder = _trustedForwarder;
-  }
 
 
   /***********************************|
@@ -489,6 +473,10 @@ contract ChargedState is
     emit ChargedSettingsSet(settingsController);
   }
 
+  function setTrustedForwarder(address _trustedForwarder) external onlyOwner {
+    trustedForwarder = _trustedForwarder;
+  }
+
   /***********************************|
   |          Only Admin/DAO           |
   |      (blackhole prevention)       |
@@ -687,7 +675,7 @@ contract ChargedState is
     internal
     view
     virtual
-    override(BaseRelayRecipient, ContextUpgradeable)
+    override(BaseRelayRecipient, Context)
     returns (address payable)
   {
     return BaseRelayRecipient._msgSender();
@@ -698,7 +686,7 @@ contract ChargedState is
     internal
     view
     virtual
-    override(BaseRelayRecipient, ContextUpgradeable)
+    override(BaseRelayRecipient, Context)
     returns (bytes memory)
   {
     return BaseRelayRecipient._msgData();

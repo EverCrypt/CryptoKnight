@@ -5,15 +5,15 @@
     "ChargedState": "ChargedState",
     "ChargedSettings": "ChargedSettings",
     "ChargedParticles": "ChargedParticles",
-    "Photon": "Photon",
     "GenericWalletManager": "GenericWalletManager",
     "GenericBasketManager": "GenericBasketManager",
     "AaveWalltManager": "AaveWalletManager",
     "AaveBridgeV1": "AaveBridgeV1",
     "AaveBridgeV2": "AaveBridgeV2",
     "Ion": "Ion",
-    "IonTimelock": "IonTimelock",
-    "Proton": "Proton"
+    "Photon": "Photon",
+    "Proton": "Proton",
+    "Lepton": "Lepton"
   },
   "dependencies": {
   },

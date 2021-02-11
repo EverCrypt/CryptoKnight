@@ -76,7 +76,7 @@ module.exports = {
         kovan: {
             url: `https://kovan.infura.io/v3/${process.env.INFURA_APIKEY}`,
             // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_APIKEY}`,
-            gasPrice: 12e9,
+            gasPrice: 10e9,
             blockGasLimit: 12487794,
             accounts: {
                 mnemonic: mnemonic.testnet,
@@ -108,9 +108,9 @@ module.exports = {
         'GenericWalletManager',
         'GenericBasketManager',
         'Ion',
-        'IonTimelock',
         'Proton',
         'Photon',
+        'Lepton',
         'ERC20',
         'ERC721'
       ],

@@ -89,6 +89,7 @@ contract ChargedParticles is
   IUniverse internal _universe;
   IChargedState internal _chargedState;
   IChargedSettings internal _chargedSettings;
+  address internal _lepton;
 
   /***********************************|
   |          Initialization           |
@@ -231,6 +232,7 @@ contract ChargedParticles is
     address referrer
   )
     external
+    virtual
     override
     managerEnabled(walletManagerId)
     nonReentrant
@@ -272,6 +274,7 @@ contract ChargedParticles is
     address assetToken
   )
     external
+    virtual
     override
     managerEnabled(walletManagerId)
     nonReentrant
@@ -280,7 +283,13 @@ contract ChargedParticles is
     _validateDischarge(contractAddress, tokenId);
 
     address creatorRedirect = _chargedSettings.getCreatorAnnuitiesRedirect(contractAddress, tokenId);
-    (creatorAmount, receiverAmount) = _chargedSettings.getWalletManager(walletManagerId).discharge(receiver, contractAddress, tokenId, assetToken, creatorRedirect);
+    (creatorAmount, receiverAmount) = _chargedSettings.getWalletManager(walletManagerId).discharge(
+      receiver,
+      contractAddress,
+      tokenId,
+      assetToken,
+      creatorRedirect
+    );
 
     // Signal to Universe Controller
     if (address(_universe) != address(0)) {
@@ -307,6 +316,7 @@ contract ChargedParticles is
     uint256 assetAmount
   )
     external
+    virtual
     override
     managerEnabled(walletManagerId)
     nonReentrant
@@ -348,6 +358,7 @@ contract ChargedParticles is
     uint256 assetAmount
   )
     external
+    virtual
     override
     managerEnabled(walletManagerId)
     nonReentrant
@@ -392,6 +403,7 @@ contract ChargedParticles is
     address assetToken
   )
     external
+    virtual
     override
     managerEnabled(walletManagerId)
     nonReentrant
@@ -435,6 +447,7 @@ contract ChargedParticles is
     uint256 assetAmount
   )
     external
+    virtual
     override
     managerEnabled(walletManagerId)
     nonReentrant
@@ -482,6 +495,7 @@ contract ChargedParticles is
     uint256 nftTokenId
   )
     external
+    virtual
     override
     basketEnabled(basketManagerId)
     nonReentrant
@@ -517,6 +531,7 @@ contract ChargedParticles is
     uint256 nftTokenId
   )
     external
+    virtual
     override
     basketEnabled(basketManagerId)
     nonReentrant
@@ -560,6 +575,15 @@ contract ChargedParticles is
   function setUniverse(address universe) external virtual onlyOwner {
     _universe = IUniverse(universe);
     emit UniverseSet(universe);
+  }
+
+  function setLeptonToken(address token) external virtual onlyOwner {
+    _lepton = token;
+    emit LeptonTokenSet(token);
+  }
+
+  function setTrustedForwarder(address _trustedForwarder) external onlyOwner {
+    trustedForwarder = _trustedForwarder;
   }
 
 
@@ -689,8 +713,8 @@ contract ChargedParticles is
     uint256 nftTokenId
   )
     internal
-    virtual
     view
+    virtual
   {
     if (_chargedState.isCovalentBondRestricted(contractAddress, tokenId)) {
       require(contractAddress.isErc721OwnerOrOperator(tokenId, _msgSender()), "CP:E-105");
@@ -708,10 +732,17 @@ contract ChargedParticles is
         require(keccak256(abi.encodePacked(requiredBasketManager)) == keccak256(abi.encodePacked(basketManagerId)), "CP:E-419");
     }
 
-    if (maxNfts > 0) {
+    if (maxNfts > 0 || _lepton == nftTokenAddress) {
       IBasketManager basketMgr = _chargedSettings.getBasketManager(basketManagerId);
       uint256 tokenCountByType = basketMgr.getTokenCountByType(contractAddress, tokenId, nftTokenAddress, nftTokenId);
-      require(maxNfts > tokenCountByType, "CP:E-427");
+
+      if (maxNfts > 0) {
+        require(maxNfts > tokenCountByType, "CP:E-427");
+      }
+
+      if (_lepton == nftTokenAddress) {
+        require(tokenCountByType == 0, "CP:E-430");
+      }
     }
   }
 

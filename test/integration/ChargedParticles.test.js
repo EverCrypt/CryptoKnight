@@ -96,7 +96,6 @@ describe("[INTEGRATION] Charged Particles", () => {
     const GenericBasketManager = await ethers.getContractFactory('GenericBasketManager');
     const Proton = await ethers.getContractFactory('Proton');
     const Ion = await ethers.getContractFactory('Ion');
-    const IonTimelock = await ethers.getContractFactory('IonTimelock');
 
     universe = Universe.attach(getDeployData('Universe', chainId).address);
     chargedState = ChargedState.attach(getDeployData('ChargedState', chainId).address);
@@ -107,8 +106,6 @@ describe("[INTEGRATION] Charged Particles", () => {
     genericBasketManager = GenericBasketManager.attach(getDeployData('GenericBasketManager', chainId).address);
     proton = Proton.attach(getDeployData('Proton', chainId).address);
     ion = Ion.attach(getDeployData('Ion', chainId).address);
-    timelocks = Object.values(getDeployData('IonTimelocks', chainId))
-      .map(ionTimelock => (IonTimelock.attach(ionTimelock.address)));
   });
 
   afterEach(async () => {
@@ -247,65 +244,45 @@ describe("[INTEGRATION] Charged Particles", () => {
     const user2Balance2 = await ethers.provider.getBalance(user2);
 
     expect(user2Balance2.sub(user2Balance1)).to.be.equal(toWei('0.955'));
-    expect(user1Balance3.sub(user1Balance2)).to.be.equal(toWei('0.045'));
     expect(await proton.ownerOf(energizedParticleId)).to.be.equal(user3);
+
+    // Creator Royalties (not transferred at time of sale, must be claimed by receiver)
+    expect(user1Balance3.sub(user1Balance2)).to.be.equal(toWei('0'));
+    expect(await proton.connect(signer1).claimCreatorRoyalties())
+      .to.emit(proton, 'RoyaltiesClaimed')
+      .withArgs(user1, toWei('0.045'));
   });
 
-  it("iontimelocks succesfully release ions to receivers", async () => {
-    const receivers = await Promise.all(timelocks.map(async timelock => await timelock.receiver()));
+  // it("ions can only be transferred after locking block", async () => {
+  //   const blocks = 10;
+  //   const receivers = await Promise.all(timelocks.map(async timelock => await timelock.receiver()));
+  //   const maxReleaseTime = max(await Promise.all(timelocks.map(async timelock => await timelock.nextReleaseTime())));
+  //   await setNetworkAfterTimestamp(Number(maxReleaseTime.toString()));
+  //   await Promise.all(timelocks.map(async timelock => {
+  //     await timelock.release('0', '0');
+  //   }));
+  //   user1 = receivers[0];
+  //   user2 = receivers[1];
+  //   signer1 = ethers.provider.getSigner(user1);
+  //   signer2 = ethers.provider.getSigner(user2);
 
-    const balancesBefore = await Promise.all(receivers.map(async receiver => await ion.balanceOf(receiver)));
+  //   await expect(ion.connect(signer2).lock(user1, await ion.balanceOf(user1), blocks)).to.be.revertedWith("ION:E-409");
 
-    const releaseTimes = await Promise.all(timelocks.map(async timelock => await timelock.nextReleaseTime()));
+  //   await ion.connect(signer1).increaseLockAllowance(user2, await ion.balanceOf(user1));
 
-    await Promise.all(timelocks.map(async timelock => {
-      await expect(timelock.release()).to.not.emit(timelock, 'PortionReleased');
-    }));
+  //   await ion.connect(signer2).lock(user1, await ion.balanceOf(user1), blocks);
 
-    const maxReleaseTime = max(releaseTimes);
+  //   await expect(ion.connect(signer1).transfer(user3, await ion.balanceOf(user1))).to.be.revertedWith("ION:E-409");
 
-    await setNetworkAfterTimestamp(Number(maxReleaseTime.toString()));
+  //   await setNetworkAfterBlockNumber(Number((await getNetworkBlockNumber()).toString()) + blocks);
 
-    await Promise.all(timelocks.map(async timelock => {
-      await expect(timelock.release()).to.emit(timelock, 'PortionReleased');
-    }));
+  //   const balance1Before = await ion.balanceOf(user1);
+  //   const balance3Before = await ion.balanceOf(user3);
 
-    await Promise.all(receivers.map(async (receiver, i) => {
-      expect(await ion.balanceOf(receiver)).to.be.above(balancesBefore[i]);
-    }));
+  //   await ion.connect(signer1).transfer(user3, balance1Before);
 
-  });
-
-  it("ions can only be transferred after locking block", async () => {
-    const blocks = 10;
-    const receivers = await Promise.all(timelocks.map(async timelock => await timelock.receiver()));
-    const maxReleaseTime = max(await Promise.all(timelocks.map(async timelock => await timelock.nextReleaseTime())));
-    await setNetworkAfterTimestamp(Number(maxReleaseTime.toString()));
-    await Promise.all(timelocks.map(async timelock => {
-      await timelock.release();
-    }));
-    user1 = receivers[0];
-    user2 = receivers[1];
-    signer1 = ethers.provider.getSigner(user1);
-    signer2 = ethers.provider.getSigner(user2);
-
-    await expect(ion.connect(signer2).lock(user1, await ion.balanceOf(user1), blocks)).to.be.revertedWith("ION:E-409");
-
-    await ion.connect(signer1).increaseLockAllowance(user2, await ion.balanceOf(user1));
-
-    await ion.connect(signer2).lock(user1, await ion.balanceOf(user1), blocks);
-
-    await expect(ion.connect(signer1).transfer(user3, await ion.balanceOf(user1))).to.be.revertedWith("ION:E-409");
-
-    await setNetworkAfterBlockNumber(Number((await getNetworkBlockNumber()).toString()) + blocks);
-
-    const balance1Before = await ion.balanceOf(user1);
-    const balance3Before = await ion.balanceOf(user3);
-
-    await ion.connect(signer1).transfer(user3, balance1Before);
-
-    expect(await ion.balanceOf(user3)).to.be.equal(balance3Before.add(balance1Before));
-  });
+  //   expect(await ion.balanceOf(user3)).to.be.equal(balance3Before.add(balance1Before));
+  // });
 
   it("generic smart wallet and manager succesfully hold erc20 tokens", async () => {
     await signerD.sendTransaction({ to: daiHodler, value: toWei('10') }); // charge up the dai hodler with a few ether in order for it to be able to transfer us some tokens
@@ -431,7 +408,7 @@ describe("[INTEGRATION] Charged Particles", () => {
       'aave',
       daiAddress,
       toWei('5')
-    )).to.be.revertedWith('AaveWalletManager:E-412');
+    )).to.be.revertedWith('AWM:E-412');
   });
 
   it("can order to release more than the wallet holds, but receive only the wallet amount", async () => {
@@ -470,7 +447,7 @@ describe("[INTEGRATION] Charged Particles", () => {
     expect((await dai.balanceOf(user2)).sub(user2BalanceBefore)).to.be.above(toWei('9.9')).and.to.be.below(toWei('10.1'));
   });
 
-  it("can succesfully conduct metallic bond", async () => {
+  it("can succesfully conduct Electrostatic Discharge", async () => {
     await signerD.sendTransaction({ to: daiHodler, value: toWei('10') }); // charge up the dai hodler with a few ether in order for it to be able to transfer us some tokens
 
     await dai.connect(daiSigner).transfer(user1, toWei('10'));
@@ -503,7 +480,7 @@ describe("[INTEGRATION] Charged Particles", () => {
     const bondWeight = toWei('1');
     const user2BalanceBefore = await ion.balanceOf(user2);
 
-    await universe.connect(signer2).conductMetallicBond(bondWeight);
+    await universe.connect(signer2).conductElectrostaticDischarge(user2, bondWeight);
 
     expect(await ion.balanceOf(user2)).to.be.above(user2BalanceBefore).and.below(user2BalanceBefore.add(bondWeight));
   });

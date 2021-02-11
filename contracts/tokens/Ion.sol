@@ -27,7 +27,6 @@ import "erc20permit/contracts/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../interfaces/IUniverse.sol";
-import "../interfaces/IIonTimelock.sol";
 import "../lib/BlackholePrevention.sol";
 
 
@@ -118,18 +117,6 @@ contract Ion is ERC20Permit, Ownable, BlackholePrevention {
   function mintToUniverse(uint256 amount) external onlyOwner returns (bool) {
     require(address(_universe) != address(0x0), "ION:E-404");
     _mint(address(_universe), amount);
-  }
-
-  function mintToTimelock(address ionTimelock, uint256[] memory amounts, uint256[] memory releaseTimes) external onlyOwner {
-    require(address(ionTimelock) != address(0x0), "ION:E-403");
-
-    uint256 totalAmount;
-    for (uint i = 0; i < amounts.length; i++) {
-      totalAmount = totalAmount.add(amounts[i]);
-    }
-
-    _mint(address(ionTimelock), totalAmount);
-    require(IIonTimelock(ionTimelock).addPortions(amounts, releaseTimes), "ION:E-406");
   }
 
 
